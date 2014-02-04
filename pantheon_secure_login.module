@@ -1,0 +1,92 @@
+<?php
+
+/**
+ * Hook Menu
+ *
+ * Implement our configuration path.
+ */
+function pantheon_secure_login_menu() {
+  $items = array();
+  $items['admin/config/pantheon-secure-login'] = array(
+    'title' => 'Pantheon Sscure Login',
+    'description' => 'Manage your Pantheon Secure Login settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('pantheon_secure_login_admin_form'),
+    'access arguments' => array('administer permissions'),
+  );
+
+  return $items;
+}
+
+/**
+ * Hook Boot
+ *
+ * Implement very early hook to see if we are on the right/wrong domain.
+ */
+function pantheon_secure_login_boot() {
+  if (pantehon_secure_login_is_enabled()) {
+    // Evaluate environment and redirect to HTTPS if we are logged in.
+    // Also, if live and not logged-in (or trying to log in), then standardize
+    // on desired "real" domain if enabled.
+  }
+}
+
+/**
+ * Hook Form Alter
+ *
+ * Handle placing the user login form under HTTPS.
+ *
+ * Also the user login block.
+ */
+function pantheon_secure_login_form_alter(&$form, &$form_state, $form_id) {
+  if (pantehon_secure_login_is_enabled()) {
+
+  }
+}
+
+/**
+ * Function to deliver the admin form.
+ */
+function pantheon_secure_login_admin_form($form, &$form_state) {
+  if (!pantheon_secure_login_is_pantheon()) {
+    $form['disabled'] = array(
+      '#type' => 'markup',
+      '#value' => '<p>'. t('You are not running this module on Pantheon, so it cannot be configured.') .'</p>',
+    );
+    return $form;
+  }
+  # TODO: warn if enabling this for the first time.
+  # TODO: check cookie domain and security settings.
+  $form['pantheon_secure_login_enabled'] = array(
+    '#type' => 'radios',
+    '#options' => array(0 => t('Disabled'), 1 => t('Enabled')),
+    '#value' => variable_get('pantheon_secure_login_enabled', 0),
+    '#description' => t('Force logins and logged-in users onto HTTPS using the "gotpantheon" domain?'),
+  );
+  $form['pantheon_secure_login_live_domain'] = array(
+    '#type' => 'textfield',
+    '#description' => t('Fully qualified domain name to standardize on in LIVE for non-logged in users. For google and SEO goodness.'),
+    '#value' => variable_get('pantheon_secure_login_live_domain'),
+    '#validate' => array('pantheon_secure_login_is_fqdn'),
+  );
+  return system_settings_form($form);
+}
+
+/**
+ * Helper function to see if we are in fact on the platform or not.
+ */
+function pantheon_secure_login_is_pantheon() {
+  return isset($_SERVER['PANTHEON_ENVIRONMENT']);
+}
+
+/**
+ * Helper function to see if we are enabled and ready for action.
+ */
+function pantehon_secure_login_is_enabled() {
+  if (pantheon_secure_login_is_pantheon() === FALSE) {
+    return FALSE;
+  }
+  if (variable_get('pantheon_secure_login_enabled', 0) === 1) {
+    return TRUE;
+  }
+}
