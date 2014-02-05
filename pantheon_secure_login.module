@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Hook Menu
- *
- * Implement our configuration path.
+ * Implements hook_menu().
  */
 function pantheon_secure_login_menu() {
   $items = array();
+
+  // Configuration.
   $items['admin/config/people/pantheon-secure-login'] = array(
     'title' => 'Pantheon Secure Login',
     'description' => 'Manage your Pantheon Secure Login settings.',
@@ -19,9 +19,9 @@ function pantheon_secure_login_menu() {
 }
 
 /**
- * Hook Boot
+ * Implements hook_boot().
  *
- * Implement very early hook to see if we are on the right/wrong domain.
+ * Very early check to see if we are on the right/wrong domain.
  */
 function pantheon_secure_login_boot() {
   if (pantheon_secure_login_is_enabled()) {
@@ -36,7 +36,7 @@ function pantheon_secure_login_boot() {
         # This is not allowed under HTTP. Go log in on https with gotpantheon.
         # TODO: it would be nice to have an interstitial page here rather than
         # a blind redirect.
-        $location = 'https://'. $_SERVER['HTTP_HOST'] .'/user/login';
+        $location = 'https://' . $_SERVER['HTTP_HOST'] . '/user/login';
         pantheon_secure_login_redirect($location);
       }
     }
@@ -55,16 +55,14 @@ function pantheon_secure_login_boot() {
 }
 
 /**
- * Hook Form Alter
+ * Implements hook_form_alter().
  *
- * Handle placing the user login form under HTTPS.
- *
- * Also the user login block.
+ * Set user login form and block action to HTTPS.
  */
 function pantheon_secure_login_form_alter(&$form, &$form_state, $form_id) {
   if (pantheon_secure_login_is_enabled()) {
     if ($form_id == 'user_login' || $form_id == 'user_login_block') {
-      $form['#action'] = 'https://'. $_SERVER['HTTP_HOST'] . $form['#action'];
+      $form['#action'] = 'https://' . $_SERVER['HTTP_HOST'] . $form['#action'];
     }
   }
 }
@@ -84,13 +82,13 @@ function pantheon_secure_login_admin_form($form, &$form_state) {
   # TODO: check cookie domain and security settings.
   $form['pantheon_secure_login_enabled'] = array(
     '#type' => 'radios',
-    '#title' => 'Redirect logins and logged-in traffic to HTTPS.',
+    '#title' => t('Redirect logins and logged-in traffic to HTTPS.'),
     '#options' => array('disabled' => t('Disabled'), 'enabled' => t('Enabled')),
     '#default_value' => variable_get('pantheon_secure_login_enabled', 'disabled'),
     '#description' => t('Force logins and logged-in users onto HTTPS using the "gotpantheon" domain?'),
   );
   $form['pantheon_secure_login_live_domain'] = array(
-    '#title' => 'Standardize my live traffic on a standard domain name.',
+    '#title' => t('Standardize my live traffic on a standard domain name.'),
     '#type' => 'textfield',
     '#description' => t('Fully qualified domain name to standardize on in LIVE for non-logged in users. For google and SEO goodness.'),
     '#default_value' => variable_get('pantheon_secure_login_live_domain'),
@@ -132,6 +130,7 @@ function pantheon_secure_login_is_enabled() {
   if (variable_get('pantheon_secure_login_enabled', 'disabled') === 'enabled') {
     return TRUE;
   }
+  return FALSE;
 }
 
 /**
@@ -156,13 +155,12 @@ function pantheon_secure_login_redirect($location, $ttl = FALSE) {
     return FALSE;
   }
   if ($ttl) {
+    header('Cache-Control: public, max-age=' . $ttl);
     header('HTTP/1.0 301 Moved Permanently');
-    header('Cache-Control: public, max-age='. $ttl);
   }
   else {
     header('HTTP/1.0 302 Moved Temporarily');
   }
-  header('Location: '. $location);
+  header('Location: ' . $location);
   exit();
 }
-
