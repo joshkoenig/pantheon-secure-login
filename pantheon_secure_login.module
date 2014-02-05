@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Pantheon Secure Login module.
+ */
+
+/**
  * Implements hook_menu().
  */
 function pantheon_secure_login_menu() {
@@ -36,7 +41,7 @@ function pantheon_secure_login_boot() {
         # This is not allowed under HTTP. Go log in on https with gotpantheon.
         # TODO: it would be nice to have an interstitial page here rather than
         # a blind redirect.
-        $location = 'https://' . $_SERVER['HTTP_HOST'] . '/user/login';
+        $location = 'https://' . pantheon_secure_login_domain() . '/user/login';
         pantheon_secure_login_redirect($location);
       }
     }
@@ -62,7 +67,7 @@ function pantheon_secure_login_boot() {
 function pantheon_secure_login_form_alter(&$form, &$form_state, $form_id) {
   if (pantheon_secure_login_is_enabled()) {
     if ($form_id == 'user_login' || $form_id == 'user_login_block') {
-      $form['#action'] = 'https://' . $_SERVER['HTTP_HOST'] . $form['#action'];
+      $form['#action'] = 'https://' . pantheon_secure_login_domain() . $form['#action'];
     }
   }
 }
@@ -163,4 +168,17 @@ function pantheon_secure_login_redirect($location, $ttl = FALSE) {
   }
   header('Location: ' . $location);
   exit();
+}
+
+/**
+ * Helper function for determining the proper domain name.
+ *
+ * Will use gotpantheon based on the PANTHEON_SITE_NAME env var.
+ *
+ * @TODO: potentially extend this to allow customers to use their prod domain
+ *        name if they have a cert there. This would make it useful to Pro and
+ *        above plans.
+ */
+function pantheon_secure_login_domain() {
+  return $_SERVER['PANTHEON_ENVIRONMENT'] . '-' . $_SERVER['PANTHEON_SITE_NAME'] . '.gotpantheon.com';
 }
