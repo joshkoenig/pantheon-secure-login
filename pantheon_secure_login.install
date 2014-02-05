@@ -1,0 +1,20 @@
+<?php
+
+/**
+ * @file
+ * Pantheon Secure Login module installation functions.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function pantheon_secure_login_uninstall() {
+  $variables = array(
+    'pantheon_secure_login_live_domain',
+    'pantheon_secure_login_enabled',
+  );
+
+  foreach ($variables as $variable) {
+    variable_del($variable);
+  }
+}
