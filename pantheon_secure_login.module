@@ -7,8 +7,8 @@
  */
 function pantheon_secure_login_menu() {
   $items = array();
-  $items['admin/config/pantheon-secure-login'] = array(
-    'title' => 'Pantheon Sscure Login',
+  $items['admin/config/people/pantheon-secure-login'] = array(
+    'title' => 'Pantheon Secure Login',
     'description' => 'Manage your Pantheon Secure Login settings.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('pantheon_secure_login_admin_form'),
@@ -24,10 +24,33 @@ function pantheon_secure_login_menu() {
  * Implement very early hook to see if we are on the right/wrong domain.
  */
 function pantheon_secure_login_boot() {
-  if (pantehon_secure_login_is_enabled()) {
-    // Evaluate environment and redirect to HTTPS if we are logged in.
-    // Also, if live and not logged-in (or trying to log in), then standardize
-    // on desired "real" domain if enabled.
+  if (pantheon_secure_login_is_enabled()) {
+    # Evaluate environment and redirect to HTTPS if we are logged in.
+    # Also, if live and not logged-in (or trying to log in), then standardize
+    # on desired "real" domain if enabled.
+    global $user;
+    if (!pantheon_secure_login_is_https()) {
+      # We are not under HTTPS. It may be time to take action.
+      if ($user->uid > 0 || (arg(0) == 'user' || arg(0) == 'admin')) {
+        # Uh-oh, we are logged in, trying to access admin pages, or user pages.
+        # This is not allowed under HTTP. Go log in on https with gotpantheon.
+        # TODO: it would be nice to have an interstitial page here rather than
+        # a blind redirect.
+        $location = 'https://'. $_SERVER['HTTP_HOST'] .'/user/login';
+        pantheon_secure_login_redirect($location);
+      }
+    }
+    // Now handle normalizing most pages on the "live" domain.
+    if ($_SERVER['pantheon_environment'] === 'live') {
+      $live_fqdn = variable_get('pantheon_secure_login_live_domain', '');
+      # If we have a fqdn, and it doesn't match this one, and we're not logged
+      # in, or trying to log in, then standardize.
+      if ($live_fqdn !== '' && $live_fqdn !== $_SERVER['HTTP_HOST'] &&
+          $user->uid == 0 && (arg(0) == 'user' && arg(1) == 'login')) {
+        $location = 'http://' . $live_fqdn . $_SERVER['REQUEST_URI'];
+        pantheon_secure_login_redirect($location, 3600);
+      }
+    }
   }
 }
 
@@ -39,8 +62,10 @@ function pantheon_secure_login_boot() {
  * Also the user login block.
  */
 function pantheon_secure_login_form_alter(&$form, &$form_state, $form_id) {
-  if (pantehon_secure_login_is_enabled()) {
-
+  if (pantheon_secure_login_is_enabled()) {
+    if ($form_id == 'user_login' || $form_id == 'user_login_block') {
+      $form['#action'] = 'https://'. $_SERVER['HTTP_HOST'] . $form['#action'];
+    }
   }
 }
 
@@ -59,17 +84,35 @@ function pantheon_secure_login_admin_form($form, &$form_state) {
   # TODO: check cookie domain and security settings.
   $form['pantheon_secure_login_enabled'] = array(
     '#type' => 'radios',
-    '#options' => array(0 => t('Disabled'), 1 => t('Enabled')),
-    '#value' => variable_get('pantheon_secure_login_enabled', 0),
+    '#title' => 'Redirect logins and logged-in traffic to HTTPS.',
+    '#options' => array('disabled' => t('Disabled'), 'enabled' => t('Enabled')),
+    '#default_value' => variable_get('pantheon_secure_login_enabled', 'disabled'),
     '#description' => t('Force logins and logged-in users onto HTTPS using the "gotpantheon" domain?'),
   );
   $form['pantheon_secure_login_live_domain'] = array(
+    '#title' => 'Standardize my live traffic on a standard domain name.',
     '#type' => 'textfield',
     '#description' => t('Fully qualified domain name to standardize on in LIVE for non-logged in users. For google and SEO goodness.'),
-    '#value' => variable_get('pantheon_secure_login_live_domain'),
-    '#validate' => array('pantheon_secure_login_is_fqdn'),
+    '#default_value' => variable_get('pantheon_secure_login_live_domain'),
   );
   return system_settings_form($form);
+}
+
+/**
+ * Validate the FQDN part so it's not a bunk domain.
+ *
+ * Borrowed regex from http://stackoverflow.com/questions/4654453/validating-if-string-is-a-fqdn-codeigniter
+ *
+ * TODO: awesomesauce checking if we are on Pantheon.
+ */
+function pantheon_secure_login_admin_form_validate($form, &$form_state) {
+  if ($form_state['input']['pantheon_secure_login_live_domain'] != '') {
+    if (preg_match('/(?=^.{1,254}$)(^(?:(?!\d|-)[a-z0-9\-]{1,63}(?<!-)\.)+(?:[a-z]{2,})$)/i', $form_state['input']['pantheon_secure_login_live_domain']) == 0) {
+      form_set_error('pantheon_secure_login_live_domain', t('This is not a valid domain name'));
+      return;
+    }
+    # TODO: curl the domain, determine if on Pantheon. For great justice.
+  }
 }
 
 /**
@@ -82,11 +125,44 @@ function pantheon_secure_login_is_pantheon() {
 /**
  * Helper function to see if we are enabled and ready for action.
  */
-function pantehon_secure_login_is_enabled() {
+function pantheon_secure_login_is_enabled() {
   if (pantheon_secure_login_is_pantheon() === FALSE) {
     return FALSE;
   }
-  if (variable_get('pantheon_secure_login_enabled', 0) === 1) {
+  if (variable_get('pantheon_secure_login_enabled', 'disabled') === 'enabled') {
     return TRUE;
   }
 }
+
+/**
+ * Helper function to determine if we are under SSL.
+ */
+function pantheon_secure_login_is_https() {
+  return (isset($_SERVER['HTTP_X_SSL']) && $_SERVER['HTTP_X_SSL'] == 'ON');
+}
+
+
+/**
+ * Helper function to do redirects.
+ *
+ * This will bail out if we are in PHP CLI mode.
+ *
+ * If no TTL, then do a 302. If TTL, do a 301 and cache it.
+ */
+function pantheon_secure_login_redirect($location, $ttl = FALSE) {
+  if (!isset($_SERVER['GATEWAY_INTERFACE']) ||
+      strpos($_SERVER['GATEWAY_INTERFACE'], 'CGI') === FALSE) {
+    # It appears we are running under the CLI. Don't do anything.
+    return FALSE;
+  }
+  if ($ttl) {
+    header('HTTP/1.0 301 Moved Permanently');
+    header('Cache-Control: public, max-age='. $ttl);
+  }
+  else {
+    header('HTTP/1.0 302 Moved Temporarily');
+  }
+  header('Location: '. $location);
+  exit();
+}
+
