@@ -1,13 +1,13 @@
 Pantheon Secure Login
 =====================
 
-If you are a free or personal customer, and you want to use SSL without having to pay the extra cost associated with a Pro plan and a dedicated IP address, this module may help. It will allow you to secure your Drupal admin login behind Pantheon's free SSL cert for the "gotpantheon" domain name, while using your public-facing domain for all other requests.
+If you are a **Free** or **Personal** customer, and you want to use SSL without having to pay the extra cost associated with a Pro plan and a dedicated IP address, this module may help. It will allow you to secure your Drupal admin login behind Pantheon's free provided SSL cert for the "gotpantheon" domain name, while using your public-facing domain for all other requests.
 
 This is only useful if you are running your site on the Pantheon platform:
 
 https://www.getpantheon.com
 
-The ideal user is someone running a Personal site (e.g. a blog or small project site) who is concerned with the security of their logins and user sessions, but is fine with their public-facing content being sent in the clear. If you don't mind doing your own logins on "live-yoursite.gotpantheon.com" then you can keep yourself secure for free.
+The ideal user is someone running a **Personal** tier site (e.g. a blog or small project site) who is concerned with the security of their logins and user sessions, but is comfortable with their publicly available content being sent in the clear. If you don't mind doing your own logins on a domain like ```live-yoursite.gotpantheon.com``` then you can keep sessions secure for free.
 
 **NOTE: Proof of Concept**
 
@@ -16,7 +16,7 @@ This is a free example showing how you can use some features of Pantheon environ
 Use Free SSL for Logins
 =======================
 
-This module enforces SSL for authenticated users on the Pantheon platform using the free "gotpantheon" domain and certificate. If you are on a personal plan and would like to secure your content author or admin login, you can use this module to do so without having to pay for an upgrade plan or an SSL certificate.
+This module enforces SSL for authenticated users (and the default login pathways) on the Pantheon platform using the providewd "gotpantheon.com" domain and certificate. If you are on a Personal plan and would like to secure your content author or admin login, you can use this module to do so without having to pay for an upgrade plan or an SSL certificate.
 
 Please note that you will need to be careful if you are redirecting incoming requests using this documentation:
 
