@@ -16,7 +16,7 @@ This is a free example showing how you can use some features of Pantheon environ
 Use Free SSL for Logins
 =======================
 
-This module enforces SSL for authenticated users (and the default login pathways) on the Pantheon platform using the providewd "gotpantheon.com" domain and certificate. If you are on a Personal plan and would like to secure your content author or admin login, you can use this module to do so without having to pay for an upgrade plan or an SSL certificate.
+This module enforces SSL for authenticated users (and the default login pathways) on the Pantheon platform using the provided "gotpantheon.com" domain and certificate. If you are on a Personal plan and would like to secure your content author or admin login, you can use this module to do so without having to pay for an upgrade plan or an SSL certificate.
 
 Please note that you will need to be careful if you are redirecting incoming requests using this documentation:
 
