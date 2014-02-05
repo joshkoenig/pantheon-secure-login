@@ -180,5 +180,8 @@ function pantheon_secure_login_redirect($location, $ttl = FALSE) {
  *        above plans.
  */
 function pantheon_secure_login_domain() {
-  return $_SERVER['PANTHEON_ENVIRONMENT'] . '-' . $_SERVER['PANTHEON_SITE_NAME'] . '.gotpantheon.com';
+  if (isset($_SERVER['PANTHEON_SITE_NAME'] )) {
+    return $_SERVER['PANTHEON_ENVIRONMENT'] . '-' . $_SERVER['PANTHEON_SITE_NAME'] . '.gotpantheon.com';
+  }
+  return $_SERVER['HTTP_HOST'];
 }
