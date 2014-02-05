@@ -2,4 +2,4 @@ name = Pantheon Secure Login
 description = Use Pantheon's free "gotpantheon" domain SSL for logins
 core = 7.x
 package = Pantheon
-configure = admin/config/pantheon-secure-login
+configure = admin/config/people/pantheon-secure-login
