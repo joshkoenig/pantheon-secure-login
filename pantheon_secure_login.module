@@ -46,7 +46,7 @@ function pantheon_secure_login_boot() {
       }
     }
     // Now handle normalizing most pages on the "live" domain.
-    if ($_SERVER['pantheon_environment'] === 'live') {
+    if ($_SERVER['PANTHEON_ENVIRONMENT'] === 'live') {
       $live_fqdn = variable_get('pantheon_secure_login_live_domain', '');
       # If we have a fqdn, and it doesn't match this one, and we're not logged
       # in, or trying to log in, then standardize.
