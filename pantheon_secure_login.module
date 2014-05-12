@@ -50,10 +50,11 @@ function pantheon_secure_login_boot() {
       $live_fqdn = variable_get('pantheon_secure_login_live_domain', '');
       # If we have a fqdn, and it doesn't match this one, and we're not logged
       # in, or trying to log in, then standardize.
-      if ($live_fqdn !== '' && $live_fqdn !== $_SERVER['HTTP_HOST'] &&
-          $user->uid == 0 && (arg(0) == 'user' && arg(1) == 'login')) {
-        $location = 'http://' . $live_fqdn . $_SERVER['REQUEST_URI'];
-        pantheon_secure_login_redirect($location, 3600);
+      if ($live_fqdn !== '' && $live_fqdn !== $_SERVER['HTTP_HOST'] && $user->uid == 0) {
+        if (!(arg(0) == 'user' && arg(1) == 'login') && !(arg(0) == 'user' && arg(1) == '')) {
+          $location = 'http://' . $live_fqdn . $_SERVER['REQUEST_URI'];
+          pantheon_secure_login_redirect($location, 3600);
+        }
       }
     }
   }
