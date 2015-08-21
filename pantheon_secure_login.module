@@ -18,6 +18,7 @@ function pantheon_secure_login_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('pantheon_secure_login_admin_form'),
     'access arguments' => array('administer permissions'),
+    'file' => 'facetapi.admin.inc',
   );
 
   return $items;
